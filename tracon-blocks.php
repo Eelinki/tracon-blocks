@@ -31,9 +31,9 @@ class WP_Plugin_Tracon_Blocks
     function get_artist_alley_data_rest($event_slug, $location, $day)
     {
         if (!function_exists('locale_get_primary_language')) {
-            $locale = locale_get_primary_language(get_locale());
-        } else {
             $locale = 'fi';
+        } else {
+            $locale = locale_get_primary_language(get_locale());
         }
         $qs = [
             'lang' => $locale,
