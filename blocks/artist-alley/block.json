@@ -7,6 +7,10 @@
       "type": "string",
       "default": ""
     },
+    "day": {
+      "type": "string",
+      "default": ""
+    },
     "eventSlug": {
       "type": "string",
       "default": ""

@@ -28,7 +28,7 @@ class WP_Plugin_Tracon_Blocks
         ));
     }
 
-    function get_artist_alley_data_rest($event_slug, $location)
+    function get_artist_alley_data_rest($event_slug, $location, $day)
     {
         if (!function_exists('locale_get_primary_language')) {
             $locale = locale_get_primary_language(get_locale());
@@ -40,6 +40,9 @@ class WP_Plugin_Tracon_Blocks
         ];
         if (in_array($location, ['artist-alley', 'art-trail'])) {
             $qs['location'] = $location;
+        }
+        if (in_array($day, ['friday', 'saturday', 'sunday'])) {
+            $qs['day'] = $day;
         }
         $qs = http_build_query($qs);
 
@@ -66,10 +69,11 @@ class WP_Plugin_Tracon_Blocks
         }
 
         $location = $attributes['location'];
+        $day = $attributes['day'];
 
         $html_attrs = array('class' => 'tracon-blocks',);
 
-        $data = $this->get_artist_alley_data_rest($event_slug, $location);
+        $data = $this->get_artist_alley_data_rest($event_slug, $location, $day);
 
         ob_start();
         ?>

@@ -39,6 +39,21 @@
                             }),
                         ),
                         el(wp.components.PanelRow, null,
+                            el(wp.components.SelectControl, {
+                                label: __('Day', 'tracon-blocks'),
+                                value: props.attributes.day,
+                                options: [
+                                    {value: '', label: 'All'},
+                                    {value: 'friday', label: 'Friday'},
+                                    {value: 'saturday', label: 'Saturday'},
+                                    {value: 'sunday', label: 'Sunday'},
+                                ],
+                                onChange: function (value) {
+                                    props.setAttributes({day: value})
+                                }
+                            }),
+                        ),
+                        el(wp.components.PanelRow, null,
                             el(wp.components.TextControl, {
                                 label: __('Event Technical Name', 'tracon-blocks'),
                                 value: props.attributes.eventSlug,
