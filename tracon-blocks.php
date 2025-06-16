@@ -35,6 +35,15 @@ class WP_Plugin_Tracon_Blocks
         } else {
             $locale = locale_get_primary_language(get_locale());
         }
+
+        $cache_key = 'tracon_artist_alley_' . md5($event_slug . $location . $day . $locale);
+
+        // See if we have a cached response available
+        $cached_response = get_transient($cache_key);
+        if ($cached_response !== false) {
+            return $cached_response;
+        }
+
         $qs = [
             'lang' => $locale,
         ];
@@ -56,11 +65,14 @@ class WP_Plugin_Tracon_Blocks
         $json = file_get_contents("https://kompassi.eu/api/v1/scopes/{$event_slug}/projections/artist-alley?{$qs}", false, $context);
         $response = json_decode($json, true);
 
+        set_transient($cache_key, $response, 5 * MINUTE_IN_SECONDS);
+
         return $response;
     }
 
     function render_block_artist_alley($attributes)
     {
+        $event_slug = '';
         if (strlen($attributes['eventSlug']) > 0) {
             $event_slug = $attributes['eventSlug'];
         }
