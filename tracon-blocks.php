@@ -17,14 +17,14 @@ class WP_Plugin_Tracon_Blocks
 {
     public function __construct()
     {
-        add_action( 'init', array( $this, 'init' ) );
-        add_filter( 'block_categories_all', array( $this, 'block_categories_all' ), 10, 2 );
+        add_action('init', array($this, 'init'));
+        add_filter('block_categories_all', array($this, 'block_categories_all'), 10, 2);
     }
 
     function init()
     {
         register_block_type(__DIR__ . '/blocks/artist-alley', array(
-            'render_callback' => array( &$this, 'render_block_artist_alley' )
+            'render_callback' => array($this, 'render_block_artist_alley')
         ));
     }
 
@@ -55,30 +55,33 @@ class WP_Plugin_Tracon_Blocks
         }
         $qs = http_build_query($qs);
 
-        $options = array(
-            'http' => array(
-                'header' => "Content-Type: application/json\r\n" .
-                    "Accept: application/json\r\n"
-            )
-        );
-        $context = stream_context_create($options);
-        $json = file_get_contents("https://kompassi.eu/api/v1/scopes/{$event_slug}/projections/artist-alley?{$qs}", false, $context);
-        $response = json_decode($json, true);
+        $response = wp_remote_get("https://kompassi.eu/api/v1/scopes/{$event_slug}/projections/artist-alley?{$qs}", array(
+            'timeout' => 10,
+            'headers' => array(
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ),
+        ));
+        if (is_wp_error($response)) {
+            return [];
+        }
+        $json = wp_remote_retrieve_body($response);
+        if (is_wp_error($json)) {
+            return [];
+        }
+        $data = json_decode($json, true);
 
-        set_transient($cache_key, $response, 5 * MINUTE_IN_SECONDS);
+        set_transient($cache_key, $data, 5 * MINUTE_IN_SECONDS);
 
-        return $response;
+        return $data;
     }
 
     function render_block_artist_alley($attributes)
     {
-        $event_slug = '';
-        if (strlen($attributes['eventSlug']) > 0) {
-            $event_slug = $attributes['eventSlug'];
-        }
-        if (strlen($event_slug) < 1) {
+        if (empty($attributes['eventSlug'])) {
             return null;
         }
+        $event_slug = $attributes['eventSlug'];
 
         $location = $attributes['location'];
         $day = $attributes['day'];
@@ -107,8 +110,9 @@ class WP_Plugin_Tracon_Blocks
         return ob_get_clean();
     }
 
-    function block_categories_all( $categories, $editor_context ) {
-        if( !$editor_context instanceof WP_Block_Editor_Context ) {
+    function block_categories_all($categories, $editor_context)
+    {
+        if (!$editor_context instanceof WP_Block_Editor_Context) {
             return $categories;
         }
 
