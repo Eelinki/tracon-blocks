@@ -51,7 +51,7 @@ class WP_Plugin_Tracon_Blocks
             $qs['location'] = $location;
         }
         if (in_array($day, ['friday', 'saturday', 'sunday'])) {
-            $qs['day'] = $day;
+            $qs['days'] = $day;
         }
         $qs = http_build_query($qs);
 
