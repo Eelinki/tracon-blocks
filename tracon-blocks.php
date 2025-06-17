@@ -117,7 +117,7 @@ class WP_Plugin_Tracon_Blocks
         }
 
         $categories[] = array(
-            'slug' => 'tracon',
+            'slug' => 'tracon-blocks',
             'title' => 'Tracon',
         );
 
