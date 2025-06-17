@@ -18,7 +18,6 @@ class WP_Plugin_Tracon_Blocks
     public function __construct()
     {
         add_action('init', array($this, 'init'));
-        add_filter('block_categories_all', array($this, 'block_categories_all'), 10, 2);
     }
 
     function init()
@@ -26,6 +25,8 @@ class WP_Plugin_Tracon_Blocks
         register_block_type(__DIR__ . '/blocks/artist-alley', array(
             'render_callback' => array($this, 'render_block_artist_alley')
         ));
+        add_filter('block_categories_all', array($this, 'block_categories_all'), 10, 2);
+        add_shortcode('tracon_artist_alley', array($this, 'tracon_artist_alley_shortcode'));
     }
 
     function get_artist_alley_data_rest($event_slug, $location, $day)
@@ -108,6 +109,25 @@ class WP_Plugin_Tracon_Blocks
 
         <?php
         return ob_get_clean();
+    }
+
+    function tracon_artist_alley_shortcode($attributes)
+    {
+        // Default attributes for the shortcode
+        $a = shortcode_atts(array(
+            'event_slug' => '',
+            'location' => '',
+            'day' => '',
+        ), $attributes, 'tracon_artist_alley');
+
+        // Map shortcode attributes to block attributes
+        $block_attributes = array(
+            'eventSlug' => $a['event_slug'],
+            'location' => $a['location'],
+            'day' => $a['day'],
+        );
+
+        return $this->render_block_artist_alley($block_attributes);
     }
 
     function block_categories_all($categories, $editor_context)
