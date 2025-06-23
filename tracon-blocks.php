@@ -3,7 +3,7 @@
  * Plugin name: Tracon Blocks
  * Description: Adds Kompassi integration blocks for WordPress
  * Author:      Eeli Hakkarainen
- * Version:     1.0.0
+ * Version:     1.1.0
  * Text Domain: tracon-blocks
  * License:     GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
