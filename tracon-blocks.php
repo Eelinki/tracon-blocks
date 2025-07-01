@@ -3,7 +3,7 @@
  * Plugin name: Tracon Blocks
  * Description: Adds Kompassi integration blocks for WordPress
  * Author:      Eeli Hakkarainen
- * Version:     1.1.0
+ * Version:     1.2.0
  * Text Domain: tracon-blocks
  * License:     GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -27,7 +27,9 @@ if (!class_exists('WP_Plugin_Tracon_Blocks')) {
                 'render_callback' => array($this, 'render_block_artist_alley')
             ));
             add_filter('block_categories_all', array($this, 'block_categories_all'), 10, 2);
+            add_filter('the_content', array($this, 'tracon_header_ids'), 40);
             add_shortcode('tracon_artist_alley', array($this, 'tracon_artist_alley_shortcode'));
+            add_shortcode('tracon_toc', array($this, 'tracon_table_of_contents_shortcode'));
         }
 
         function get_artist_alley_data_rest($event_slug, $location, $day)
@@ -98,11 +100,11 @@ if (!class_exists('WP_Plugin_Tracon_Blocks')) {
             <?= '<div id="tracon_block_artist_alley" ' . get_block_wrapper_attributes($html_attrs) . ' ' . wp_interactivity_data_wp_context($attributes) . '>' ?>
             <?php foreach ($data as $artist): ?>
             <div>
-                <h3>
+                <p class="artist-name">
                     <a href="<?= esc_url($artist['website']) ?>" target="_blank" rel="noopener ugc">
                         <?= esc_html($artist['name']) ?>
                     </a>
-                </h3>
+                </p>
                 <p><?= esc_html($artist['formattedTableNumber']) ?></p>
             </div>
         <?php endforeach; ?>
@@ -143,6 +145,99 @@ if (!class_exists('WP_Plugin_Tracon_Blocks')) {
             );
 
             return $categories;
+        }
+
+        function tracon_table_of_contents_shortcode()
+        {
+            $post = get_post();
+
+            // Get the page contents and remove [tracon_toc] shortcodes to avoid infinite loops
+            $content = get_post_field('post_content', $post->ID);
+            $content = str_replace('[tracon_toc]', '', $content);
+
+            // Pagebuilders (such as Divi) have headings internally stored as shortcodes, so execute them first
+            $content = apply_filters('the_content', $content);
+
+            $dom = new DOMDocument();
+            libxml_use_internal_errors(true);
+            $dom->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+            libxml_clear_errors();
+
+            $headers = [];
+
+            // Parse all headings from the content
+            $xpath = new DOMXPath($dom);
+            $header_nodes = $xpath->query('//h1|//h2|//h3|//h4|//h5|//h6');
+
+            foreach ($header_nodes as $header_node) {
+                $level = (int)substr($header_node->tagName, 1);
+                $id = $header_node->getAttribute('id');
+                if (empty($id)) {
+                    $id = sanitize_title($header_node->textContent);
+                }
+                $headers[] = [
+                    'level' => $level,
+                    'text' => trim($header_node->textContent),
+                    'id' => $id
+                ];
+            }
+
+            if (empty($headers)) {
+                return '';
+            }
+
+            $output = '<div class="tracon-table-of-contents">';
+            $output .= '<ul>';
+            $output .= $this->toc_recurse($headers, 0);
+            $output .= '</ul>';
+            $output .= '</div>';
+
+            return $output;
+        }
+
+        function toc_recurse(&$headers, $current_level)
+        {
+            $output = '';
+
+            while (!empty($headers) && $headers[0]['level'] > $current_level) {
+                $header = array_shift($headers);
+
+                $output .= '<li>';
+                $output .= '<a href="#' . esc_attr($header['id']) . '">' . esc_html($header['text']) . '</a>';
+
+                if (!empty($headers) && $headers[0]['level'] > $header['level']) {
+                    $output .= '<ul>';
+                    $output .= $this->toc_recurse($headers, $header['level']);
+                    $output .= '</ul>';
+                }
+
+                $output .= '</li>';
+            }
+
+            return $output;
+        }
+
+        function tracon_header_ids($content)
+        {
+            if (is_singular() && in_the_loop() && is_main_query()) {
+                $dom = new DOMDocument();
+                libxml_use_internal_errors(true);
+                $dom->loadHTML(mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8'));
+                libxml_clear_errors();
+
+                $xpath = new DOMXPath($dom);
+                $header_nodes = $xpath->query('//h1|//h2|//h3|//h4|//h5|//h6');
+
+                foreach ($header_nodes as $header_node) {
+                    if (!$header_node->hasAttribute('id')) {
+                        $slug = sanitize_title($header_node->textContent);
+                        $header_node->setAttribute('id', $slug);
+                    }
+                }
+
+                $content = $dom->saveHTML();
+            }
+            return $content;
         }
     }
 
