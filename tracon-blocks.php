@@ -3,7 +3,7 @@
  * Plugin name: Tracon Blocks
  * Description: Adds Kompassi integration blocks for WordPress
  * Author:      Eeli Hakkarainen
- * Version:     1.2.0
+ * Version:     1.2.1
  * Text Domain: tracon-blocks
  * License:     GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -149,10 +149,13 @@ if (!class_exists('WP_Plugin_Tracon_Blocks')) {
 
         function tracon_table_of_contents_shortcode()
         {
-            $post = get_post();
+            $post_id = get_queried_object_id();
 
             // Get the page contents and remove [tracon_toc] shortcodes to avoid infinite loops
-            $content = get_post_field('post_content', $post->ID);
+            $content = get_post_field('post_content', $post_id);
+            if ($content === '') {
+                return '';
+            }
             $content = str_replace('[tracon_toc]', '', $content);
 
             // Pagebuilders (such as Divi) have headings internally stored as shortcodes, so execute them first
@@ -171,14 +174,14 @@ if (!class_exists('WP_Plugin_Tracon_Blocks')) {
 
             foreach ($header_nodes as $header_node) {
                 $level = (int)substr($header_node->tagName, 1);
-                $id = $header_node->getAttribute('id');
-                if (empty($id)) {
-                    $id = sanitize_title($header_node->textContent);
+                $post_id = $header_node->getAttribute('id');
+                if (empty($post_id)) {
+                    $post_id = sanitize_title($header_node->textContent);
                 }
                 $headers[] = [
                     'level' => $level,
                     'text' => trim($header_node->textContent),
-                    'id' => $id
+                    'id' => $post_id
                 ];
             }
 
